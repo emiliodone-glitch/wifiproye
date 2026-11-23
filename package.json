@@ -1,0 +1,16 @@
+{
+  "name": "wifiproye",
+  "version": "1.0.0",
+  "description": "Portal cautivo propio: formulario de registro para dar acceso al Wi-Fi",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}
