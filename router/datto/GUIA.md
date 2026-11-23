@@ -22,10 +22,25 @@ El **DNW-POE1** es solo la fuente de poder: le da corriente al AP por el mismo c
   └────────────┘
 ```
 
-- Un cable de red va del **router con internet** al puerto de datos del adaptador.
-- Otro cable va del puerto **PoE** del adaptador al AP440.
-- El AP enciende con ese cable (no lleva otro cargador). Puede tardar 2–5 minutos en estar listo.
+- Un cable de red va del **router con internet** al puerto de datos ("LAN") del adaptador.
+- Otro cable va del puerto **PoE** del adaptador al puerto del AP marcado
+  **"1G Ethernet Port, 802.3at PoE Input"** (debajo de la tapa inferior del AP).
+- El AP enciende con ese cable; **no** hace falta el conector "12V DC". Tarda 2–5 minutos en estar listo.
 - ⚠️ Nunca conectes el puerto PoE a una computadora o router: lleva 54 V.
+
+**Puertos del AP440** (bajo la tapa inferior):
+
+| Puerto | Uso |
+|---|---|
+| 1G Ethernet Port, 802.3at PoE Input | Entrada: internet + corriente desde el DNW-POE1 |
+| 1G Ethernet Port | Salida opcional hacia otro equipo |
+| 12V DC 2.5A Power Input | Alternativa al PoE (no se usa) |
+| Reset | Volver a fábrica |
+| USB 2.0 · Ground · Lock Mount | USB, tierra (instalación exterior), candado |
+
+**Montaje:** el AP440 es para exterior (pared, techo o poste de 19–153 mm; abrazaderas no incluidas).
+Pasar el cable por la tapa con sellos y atornillarla para que no entre agua. Si va afuera, conectar
+el tornillo de tierra. **El adaptador DNW-POE1 es solo para interior.**
 
 ## 2. Dar de alta el AP en Datto Network Manager
 
