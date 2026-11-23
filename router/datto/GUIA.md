@@ -24,7 +24,10 @@ El **DNW-POE1** es solo la fuente de poder: le da corriente al AP por el mismo c
 
 - Un cable de red va del **router con internet** al puerto de datos ("LAN") del adaptador.
 - Otro cable va del puerto **PoE** del adaptador al puerto del AP marcado
-  **"1G Ethernet Port, 802.3at PoE Input"** (debajo de la tapa inferior del AP).
+  **"1G Ethernet Port, 802.3at PoE Input"** (con el símbolo ⚡, debajo de la tapa inferior del AP).
+- El adaptador tiene tres marcas: **LAN** (entrada de internet), **PoE** (salida al AP) y la luz **PWR**.
+- Enchufar el adaptador a una toma **con tierra** (3 patas). Solo bajo techo, entre 0 °C y 40 °C,
+  y si se atornilla a la pared, a 2 m de altura o menos.
 - El AP enciende con ese cable; **no** hace falta el conector "12V DC". Tarda 2–5 minutos en estar listo.
 - ⚠️ Nunca conectes el puerto PoE a una computadora o router: lleva 54 V.
 
