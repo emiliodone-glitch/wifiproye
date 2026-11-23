@@ -10,83 +10,95 @@
   <header class="cabecera">
     <img class="logo" src="/{{LOGO}}" data-logo="{{LOGO}}" alt="{{ORG_NAME}}">
     <h1>Bienvenido a la red <span>{{WIFI_NAME}}</span></h1>
-    <p>Completa tus datos para conectarte gratis.</p>
   </header>
 
   <main class="tarjeta">
-    <!-- Se muestra si este teléfono ya se registró antes -->
-    <section id="regreso" hidden>
-      <h2>¡Hola de nuevo, <span id="regreso-nombre"></span>!</h2>
-      <p>Este dispositivo ya está registrado.</p>
-      <button type="button" id="boton-reconectar" class="principal">Conectarme</button>
-      <button type="button" id="boton-otro" class="enlace">No soy yo, registrarme</button>
+    <div id="cargando" class="cargando">Cargando…</div>
+
+    <!-- Perfil completo: se conecta solo -->
+    <section id="completo" hidden>
+      <h2>¡Hola de nuevo, <span id="completo-nombre"></span>!</h2>
+      <p>Te estamos conectando…</p>
+      <button type="button" id="boton-completo" class="principal">Conectarme</button>
     </section>
 
-    <form id="formulario" method="post" action="/api/registro" novalidate>
+    <form id="formulario" novalidate hidden>
+      <div class="pasos" id="pasos" aria-hidden="true"></div>
+      <p id="titulo" class="titulo-paso"></p>
+
       <!-- Datos que manda el router (se llenan solos) -->
       <input type="hidden" name="mac">
       <input type="hidden" name="ip">
       <input type="hidden" name="login">
       <input type="hidden" name="dst">
+      <input type="hidden" name="etapa">
 
-      <label><span>Correo electrónico <b>*</b></span>
-        <input type="email" name="email" autocomplete="email" inputmode="email" required maxlength="254" placeholder="tucorreo@ejemplo.com">
-      </label>
-
-      <div class="fila">
-        <label><span>Nombre <b>*</b></span>
-          <input name="nombre" autocomplete="given-name" required maxlength="100">
+      <!-- PASO 1: correo -->
+      <fieldset class="etapa" data-etapa="correo" disabled hidden>
+        <label><span>Correo electrónico <b>*</b></span>
+          <input type="email" name="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="tucorreo@ejemplo.com">
         </label>
-        <label>Segundo nombre
-          <input name="segundo_nombre" autocomplete="additional-name" maxlength="100">
+        <label class="casilla">
+          <input type="checkbox" name="acepta_terminos" value="1">
+          <span>Acepto los términos de uso y la <a href="{{PRIVACY_URL}}" target="_blank">política de privacidad</a>. <b>*</b></span>
         </label>
-      </div>
-
-      <label><span>Apellido <b>*</b></span>
-        <input name="apellido" autocomplete="family-name" required maxlength="100">
-      </label>
-
-      <label><span>Teléfono <b>*</b></span></label>
-      <div class="fila telefono">
-        <select name="codigo_pais" aria-label="Código de país">
-          <option value="+1" selected>🇩🇴 +1</option>
-          <option value="+1">🇺🇸 +1</option>
-          <option value="+34">🇪🇸 +34</option>
-          <option value="+52">🇲🇽 +52</option>
-          <option value="+57">🇨🇴 +57</option>
-          <option value="+58">🇻🇪 +58</option>
-          <option value="+509">🇭🇹 +509</option>
-          <option value="+51">🇵🇪 +51</option>
-          <option value="+56">🇨🇱 +56</option>
-          <option value="+54">🇦🇷 +54</option>
-        </select>
-        <input type="tel" name="telefono" autocomplete="tel-national" inputmode="tel" required maxlength="20" placeholder="809 555 1234" aria-label="Número de teléfono">
-      </div>
-
-      <label>Fecha de nacimiento
-        <input type="date" name="nacimiento" autocomplete="bday" min="1900-01-01">
-      </label>
-
-      <fieldset>
-        <legend>Género</legend>
-        <label class="opcion"><input type="radio" name="genero" value="femenino"> Femenino</label>
-        <label class="opcion"><input type="radio" name="genero" value="masculino"> Masculino</label>
-        <label class="opcion"><input type="radio" name="genero" value="otro"> Otro</label>
       </fieldset>
 
-      <label class="casilla">
-        <input type="checkbox" name="acepta_sms" value="1">
-        <span>Acepto recibir mensajes de texto de {{ORG_NAME}}. Pueden aplicar cargos de mensajería. No es obligatorio para conectarse.</span>
-      </label>
+      <!-- PASO 2: nombre -->
+      <fieldset class="etapa" data-etapa="nombre" disabled hidden>
+        <div class="fila">
+          <label><span>Nombre <b>*</b></span>
+            <input name="nombre" autocomplete="given-name" maxlength="100">
+          </label>
+          <label>Segundo nombre
+            <input name="segundo_nombre" autocomplete="additional-name" maxlength="100">
+          </label>
+        </div>
+        <label><span>Apellido <b>*</b></span>
+          <input name="apellido" autocomplete="family-name" maxlength="100">
+        </label>
+      </fieldset>
 
-      <label class="casilla">
-        <input type="checkbox" name="acepta_terminos" value="1" required>
-        <span>Acepto los términos de uso y la <a href="{{PRIVACY_URL}}" target="_blank">política de privacidad</a>. <b>*</b></span>
-      </label>
+      <!-- PASO 3: teléfono -->
+      <fieldset class="etapa" data-etapa="telefono" disabled hidden>
+        <label for="telefono"><span>Teléfono <b>*</b></span></label>
+        <div class="fila telefono">
+          <select name="codigo_pais" aria-label="Código de país">
+            <option value="+1" selected>🇩🇴 +1</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+34">🇪🇸 +34</option>
+            <option value="+52">🇲🇽 +52</option>
+            <option value="+57">🇨🇴 +57</option>
+            <option value="+58">🇻🇪 +58</option>
+            <option value="+509">🇭🇹 +509</option>
+            <option value="+51">🇵🇪 +51</option>
+            <option value="+56">🇨🇱 +56</option>
+            <option value="+54">🇦🇷 +54</option>
+          </select>
+          <input id="telefono" type="tel" name="telefono" autocomplete="tel-national" inputmode="tel" maxlength="20" placeholder="809 555 1234">
+        </div>
+        <label class="casilla">
+          <input type="checkbox" name="acepta_sms" value="1">
+          <span>Acepto recibir mensajes de texto de {{ORG_NAME}}. Pueden aplicar cargos de mensajería. No es obligatorio para conectarse.</span>
+        </label>
+      </fieldset>
+
+      <!-- PASO 4: detalles -->
+      <fieldset class="etapa" data-etapa="detalles" disabled hidden>
+        <label><span>Fecha de nacimiento <b>*</b></span>
+          <input type="date" name="nacimiento" autocomplete="bday" min="1900-01-01">
+        </label>
+        <div class="grupo-radio" role="radiogroup" aria-label="Género">
+          <span class="leyenda">Género <b>*</b></span>
+          <label class="opcion"><input type="radio" name="genero" value="femenino"> Femenino</label>
+          <label class="opcion"><input type="radio" name="genero" value="masculino"> Masculino</label>
+          <label class="opcion"><input type="radio" name="genero" value="otro"> Otro</label>
+        </div>
+      </fieldset>
 
       <div id="errores" class="errores" role="alert" hidden></div>
 
-      <button type="submit" class="principal" id="boton-enviar">Aceptar y conectar</button>
+      <button type="submit" class="principal" id="boton-enviar">Conectarme</button>
     </form>
   </main>
 

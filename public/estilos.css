@@ -64,8 +64,21 @@ input:focus, select:focus { outline: 2px solid var(--color); outline-offset: 1px
 .fila.telefono { grid-template-columns: 110px 1fr; margin-top: -10px; }
 @media (max-width: 380px) { .fila:not(.telefono) { grid-template-columns: 1fr; } }
 
-fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
-legend { font-size: .9rem; font-weight: 600; margin-bottom: 4px; width: 100%; }
+fieldset.etapa { border: 0; padding: 0; margin: 0; display: grid; gap: 14px; min-width: 0; }
+.grupo-radio { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.leyenda { font-size: .9rem; font-weight: 600; width: 100%; }
+.leyenda b { color: var(--error); }
+
+/* Paso a paso */
+.titulo-paso { margin: 0; font-size: 1.05rem; font-weight: 600; text-align: center; }
+.pasos { display: flex; justify-content: center; gap: 8px; }
+.pasos i { width: 10px; height: 10px; border-radius: 50%; background: var(--borde); }
+.pasos i.hecho { background: var(--color); }
+.pasos i.actual { background: var(--color); box-shadow: 0 0 0 4px rgba(31, 138, 58, .2); }
+.cargando { text-align: center; color: var(--suave); padding: 20px 0; }
+#completo { text-align: center; }
+.progreso { display: inline-block; width: 60px; height: 8px; background: var(--borde); border-radius: 4px; overflow: hidden; vertical-align: middle; }
+.progreso i { display: block; height: 100%; background: var(--color); }
 .opcion { display: flex; align-items: center; gap: 6px; font-weight: 400; }
 .opcion input, .casilla input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--color); }
 
@@ -87,8 +100,6 @@ button { font: inherit; cursor: pointer; }
   color: #fff;
 }
 .principal:disabled { opacity: .6; cursor: progress; }
-.enlace { background: none; border: 0; color: var(--suave); text-decoration: underline; margin-top: 12px; width: 100%; }
-#regreso { text-align: center; }
 
 .pie { text-align: center; padding: 24px 16px 40px; font-size: .85rem; }
 .pie a { color: var(--suave); }

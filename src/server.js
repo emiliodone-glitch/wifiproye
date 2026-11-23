@@ -1,10 +1,11 @@
 import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
-import { timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual, randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { config as configPorDefecto } from './config.js';
 import { abrirBaseDeDatos } from './db.js';
+import { ETAPAS, etapaPendiente, validarEtapa, tituloDe } from './etapas.js';
 
 const RAIZ = fileURLToPath(new URL('..', import.meta.url));
 const PUBLICO = join(RAIZ, 'public');
@@ -22,45 +23,44 @@ const TIPOS = {
 const escapar = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-// ---------- Validación ----------
+// ---------- Identificar el dispositivo ----------
 
 const MAC = /^([0-9A-F]{2}[:-]){5}[0-9A-F]{2}$/i;
-const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
+const COOKIE = 'wp_disp';
 
 function limpiar(v, max = 100) {
   return typeof v === 'string' ? v.trim().slice(0, max) : '';
 }
 
-export function validarRegistro(entrada) {
-  const errores = [];
-  const d = {
-    email: limpiar(entrada.email, 254).toLowerCase(),
-    nombre: limpiar(entrada.nombre),
-    segundo_nombre: limpiar(entrada.segundo_nombre) || null,
-    apellido: limpiar(entrada.apellido),
-    codigo_pais: limpiar(entrada.codigo_pais, 5) || '+1',
-    telefono: limpiar(entrada.telefono, 30).replace(/[^\d]/g, ''),
-    nacimiento: limpiar(entrada.nacimiento, 10) || null,
-    genero: ['femenino', 'masculino', 'otro'].includes(entrada.genero) ? entrada.genero : null,
-    acepta_sms: entrada.acepta_sms === true || entrada.acepta_sms === 'on' || entrada.acepta_sms === '1' ? 1 : 0,
+function leerCookie(req) {
+  const m = new RegExp(`(?:^|;\\s*)${COOKIE}=([a-f0-9]{32})`).exec(req.headers.cookie || '');
+  return m ? m[1] : null;
+}
+
+/**
+ * Cómo reconocemos que es el mismo teléfono en la próxima conexión:
+ * 1) por la MAC que manda el router (lo normal), o
+ * 2) por una cookie, si no hay router (modo prueba) o no llegó la MAC.
+ * Si se pierden las dos (MAC aleatoria nueva y sin cookie), la persona pone su correo
+ * otra vez y se le reconoce por el correo: sigue donde se había quedado.
+ */
+function claveDispositivo(req, mac) {
+  const m = limpiar(mac, 17);
+  if (MAC.test(m)) return 'mac:' + m.toUpperCase().replace(/-/g, ':');
+  const c = leerCookie(req);
+  return c ? 'cookie:' + c : null;
+}
+
+function estadoDe(persona) {
+  const etapa = etapaPendiente(persona);
+  return {
+    etapa: etapa?.id || null,
+    paso: etapa ? ETAPAS.indexOf(etapa) + 1 : ETAPAS.length,
+    total: ETAPAS.length,
+    titulo: etapa ? tituloDe(etapa, persona) : null,
+    nombre: persona?.nombre || null,
+    nuevo: !persona,
   };
-  const aceptaTerminos = entrada.acepta_terminos === true || entrada.acepta_terminos === 'on' || entrada.acepta_terminos === '1';
-
-  if (!EMAIL.test(d.email)) errores.push('Escribe un correo electrónico válido.');
-  if (!d.nombre) errores.push('Escribe tu nombre.');
-  if (!d.apellido) errores.push('Escribe tu apellido.');
-  if (!/^\+\d{1,4}$/.test(d.codigo_pais)) errores.push('Código de país inválido.');
-  if (d.telefono.length < 7 || d.telefono.length > 15) errores.push('Escribe un número de teléfono válido.');
-  if (d.nacimiento) {
-    const f = new Date(d.nacimiento + 'T00:00:00Z');
-    const hoy = new Date();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d.nacimiento) || isNaN(f) || f > hoy || f.getUTCFullYear() < 1900) {
-      errores.push('Fecha de nacimiento inválida.');
-    }
-  }
-  if (!aceptaTerminos) errores.push('Debes aceptar los términos y la política de privacidad.');
-
-  return { datos: d, errores };
 }
 
 // ---------- Vinculación con el router ----------
@@ -125,7 +125,8 @@ function leerCuerpo(req, limite = 16 * 1024) {
   });
 }
 
-function enviar(res, estado, cuerpo, tipo = 'text/html; charset=utf-8', extra = {}) {
+function enviar(res, estado, cuerpo, tipo, extra = {}) {
+  tipo ??= 'text/html; charset=utf-8';
   res.writeHead(estado, {
     'Content-Type': tipo,
     'Cache-Control': 'no-store',
@@ -178,20 +179,25 @@ function paginaAdmin(db) {
   const r = db.resumen();
   const filas = db
     .listar()
-    .map(
-      (x) => `<tr><td>${x.id}</td><td>${escapar(x.creado)}</td><td>${escapar(x.nombre)} ${escapar(x.segundo_nombre || '')} ${escapar(x.apellido)}</td>
-      <td>${escapar(x.email)}</td><td>${escapar(x.codigo_pais)} ${escapar(x.telefono)}</td><td>${escapar(x.nacimiento || '')}</td>
-      <td>${escapar(x.genero || '')}</td><td>${x.acepta_sms ? 'Sí' : 'No'}</td><td>${escapar(x.mac || '')}</td><td>${x.visitas}</td></tr>`
-    )
+    .map((x) => {
+      const pend = etapaPendiente(x);
+      const hechos = pend ? ETAPAS.indexOf(pend) : ETAPAS.length;
+      const progreso = `<span class="progreso" title="${hechos} de ${ETAPAS.length} pasos"><i style="width:${(hechos / ETAPAS.length) * 100}%"></i></span> ${hechos}/${ETAPAS.length}`;
+      return `<tr><td>${x.id}</td><td>${progreso}</td><td>${escapar(x.email)}</td>
+      <td>${escapar([x.nombre, x.segundo_nombre, x.apellido].filter(Boolean).join(' '))}</td>
+      <td>${x.telefono ? escapar(x.codigo_pais + ' ' + x.telefono) : ''}</td><td>${escapar(x.nacimiento || '')}</td>
+      <td>${escapar(x.genero || '')}</td><td>${x.acepta_sms == null ? '' : x.acepta_sms ? 'Sí' : 'No'}</td>
+      <td>${x.visitas}</td><td>${x.dispositivos}</td><td>${escapar(x.creado)}</td><td>${escapar(x.ultima_visita || '')}</td></tr>`;
+    })
     .join('');
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Panel de registros</title><link rel="stylesheet" href="/estilos.css"></head><body class="admin">
 <main><h1>Registros del Wi-Fi</h1>
-<div class="tarjetas"><div><b>${r.registros}</b>registros</div><div><b>${r.hoy}</b>hoy</div><div><b>${r.conexiones}</b>conexiones</div></div>
+<div class="tarjetas"><div><b>${r.personas}</b>personas</div><div><b>${r.conexiones}</b>conexiones</div><div><b>${r.hoy}</b>conexiones hoy</div></div>
 <p><a class="boton" href="/admin/registros.csv">Descargar Excel (CSV)</a></p>
-<div class="tabla"><table><thead><tr><th>#</th><th>Fecha (UTC)</th><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Nacimiento</th><th>Género</th><th>SMS</th><th>MAC</th><th>Visitas</th></tr></thead>
-<tbody>${filas || '<tr><td colspan="10">Todavía no hay registros.</td></tr>'}</tbody></table></div>
-<p class="nota">Se muestran los últimos 500. El CSV trae todos.</p></main></body></html>`;
+<div class="tabla"><table><thead><tr><th>#</th><th>Perfil</th><th>Correo</th><th>Nombre</th><th>Teléfono</th><th>Nacimiento</th><th>Género</th><th>SMS</th><th>Visitas</th><th>Equipos</th><th>Registro (UTC)</th><th>Última visita</th></tr></thead>
+<tbody>${filas || '<tr><td colspan="12">Todavía no hay registros.</td></tr>'}</tbody></table></div>
+<p class="nota">Pasos: ${ETAPAS.map((e, i) => `${i + 1}. ${e.id}`).join(' · ')}. Se muestran los últimos 500; el CSV trae todos.</p></main></body></html>`;
 }
 
 // ---------- Servidor ----------
@@ -203,49 +209,51 @@ export function crearServidor(cfg = configPorDefecto, db = abrirBaseDeDatos(cfg.
     try {
       // Portal (formulario)
       if (req.method === 'GET' && (ruta === '/' || ruta === '/portal')) {
-        return enviar(res, 200, plantilla('portal.html', cfg));
+        const extra = {};
+        if (!leerCookie(req)) {
+          const seguro = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
+          extra['Set-Cookie'] = `${COOKIE}=${randomBytes(16).toString('hex')}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${seguro}`;
+        }
+        return enviar(res, 200, plantilla('portal.html', cfg), undefined, extra);
       }
 
       if (req.method === 'GET' && ruta === '/privacidad') {
         return enviar(res, 200, plantilla('privacidad.html', cfg));
       }
 
-      // ¿Este dispositivo ya se registró antes?
+      // ¿Qué paso le toca a este dispositivo?
       if (req.method === 'GET' && ruta === '/api/estado') {
-        const mac = limpiar(url.searchParams.get('mac'), 17);
-        const r = MAC.test(mac) ? db.buscarPorMac(mac.toUpperCase()) : undefined;
-        return json(res, 200, { registrado: !!r, nombre: r?.nombre || null });
+        const clave = claveDispositivo(req, url.searchParams.get('mac'));
+        return json(res, 200, estadoDe(db.personaPorDispositivo(clave)));
       }
 
-      // Registro nuevo
-      if (req.method === 'POST' && ruta === '/api/registro') {
+      // Enviar el paso que tocaba y conectarse
+      if (req.method === 'POST' && ruta === '/api/conectar') {
         const cuerpo = await leerCuerpo(req);
-        const quiereJson = (req.headers.accept || '').includes('application/json');
-        const { datos, errores } = validarRegistro(cuerpo);
-        if (errores.length) {
-          if (quiereJson) return json(res, 400, { ok: false, errores });
-          return enviar(res, 400, `<p>${errores.map(escapar).join('<br>')}</p><p><a href="javascript:history.back()">Volver</a></p>`);
+        const clave = claveDispositivo(req, cuerpo.mac);
+        const ip = limpiar(cuerpo.ip, 45) || ipCliente(req);
+        const ua = limpiar(req.headers['user-agent'], 300);
+        let persona = db.personaPorDispositivo(clave);
+        const etapa = etapaPendiente(persona);
+
+        // La página mostraba otro paso (p. ej. dos pestañas abiertas): que se actualice.
+        if ((cuerpo.etapa || null) !== (etapa?.id || null)) {
+          return json(res, 409, { ok: false, estado: estadoDe(persona), errores: ['La página se actualizó, revisa los datos.'] });
         }
-        const mac = limpiar(cuerpo.mac, 17);
-        db.guardarRegistro({
-          ...datos,
-          mac: MAC.test(mac) ? mac.toUpperCase() : null,
-          ip: limpiar(cuerpo.ip, 45) || ipCliente(req),
-          user_agent: limpiar(req.headers['user-agent'], 300),
-        });
-        const destino = urlDeAcceso(cfg, { login: cuerpo.login, dst: cuerpo.dst });
-        if (quiereJson) return json(res, 200, { ok: true, redirect: destino });
-        return enviar(res, 302, '', 'text/plain', { Location: destino });
-      }
 
-      // Dispositivo que ya se registró: conectar sin llenar el formulario otra vez
-      if (req.method === 'POST' && ruta === '/api/reconectar') {
-        const cuerpo = await leerCuerpo(req);
-        const mac = limpiar(cuerpo.mac, 17).toUpperCase();
-        const r = MAC.test(mac) ? db.buscarPorMac(mac) : undefined;
-        if (!r) return json(res, 404, { ok: false, errores: ['Este dispositivo no está registrado.'] });
-        db.registrarConexion(r.id, mac, limpiar(cuerpo.ip, 45) || ipCliente(req));
-        return json(res, 200, { ok: true, redirect: urlDeAcceso(cfg, { login: cuerpo.login, dst: cuerpo.dst }) });
+        if (etapa) {
+          const { datos, errores } = validarEtapa(etapa, cuerpo);
+          if (errores.length) return json(res, 400, { ok: false, errores });
+          if (!persona) {
+            // Paso 1: correo. Si el correo ya existía (otro teléfono, o cambió la MAC), se reconoce.
+            persona = db.obtenerOCrearPersona(datos.email, datos.terminos_aceptados_en);
+            db.vincularDispositivo(clave, persona.id, ua);
+          }
+          persona = db.completarPersona(persona.id, datos);
+        }
+
+        db.registrarConexion(persona.id, clave, ip, etapa?.id || 'completo');
+        return json(res, 200, { ok: true, redirect: urlDeAcceso(cfg, { login: cuerpo.login, dst: cuerpo.dst }), estado: estadoDe(persona) });
       }
 
       // Panel de administración
@@ -256,8 +264,8 @@ export function crearServidor(cfg = configPorDefecto, db = abrirBaseDeDatos(cfg.
           });
         }
         if (ruta === '/admin') return enviar(res, 200, paginaAdmin(db));
-        const cols = ['id', 'creado', 'email', 'nombre', 'segundo_nombre', 'apellido', 'codigo_pais', 'telefono',
-          'nacimiento', 'genero', 'acepta_sms', 'mac', 'ip'];
+        const cols = ['id', 'creado', 'actualizado', 'email', 'nombre', 'segundo_nombre', 'apellido', 'codigo_pais',
+          'telefono', 'nacimiento', 'genero', 'acepta_sms', 'terminos_aceptados_en', 'visitas'];
         const csv = '﻿' + [cols.join(','), ...db.todos().map((f) => cols.map((c) => csvCelda(f[c])).join(','))].join('\r\n');
         return enviar(res, 200, csv, 'text/csv; charset=utf-8', {
           'Content-Disposition': 'attachment; filename="registros-wifi.csv"',

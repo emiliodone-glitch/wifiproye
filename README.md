@@ -1,8 +1,31 @@
 # wifiproye — Portal cautivo propio
 
 Cuando alguien se conecta al Wi-Fi, el teléfono abre solo una página donde la persona deja sus datos.
-Al enviar el formulario, el router le abre el internet. Los datos quedan guardados en nuestro servidor
+Al enviarlos, el router le abre el internet. Los datos quedan guardados en nuestro servidor
 y se pueden ver y descargar en Excel desde `/admin`.
+
+## Registro progresivo (un dato nuevo en cada conexión)
+
+No se pide todo de golpe. Cada vez que la persona se conecta se le pide **solo el siguiente paso**:
+
+| Conexión | Qué ve la persona | Qué se le pide |
+|---|---|---|
+| 1ª | "Escribe tu correo para conectarte" | Correo + aceptar términos |
+| 2ª | "¡Hola de nuevo! Ya estás registrado…" | Nombre y apellido |
+| 3ª | "¡Hola, Juan! … agrega tu número de teléfono" | Teléfono (+ permiso de SMS opcional) |
+| 4ª | "¡Hola, Juan! Último paso…" | Fecha de nacimiento y género |
+| 5ª en adelante | "¡Hola de nuevo, Juan! Te estamos conectando…" | Nada: entra solo |
+
+- Los pasos, su orden y los textos están en **`src/etapas.js`**: se pueden cambiar, quitar o agregar.
+- **Cómo se reconoce a la persona:** por la MAC del teléfono que envía el router. Si el teléfono
+  cambia de MAC (iPhone/Android a veces usan MAC aleatoria) o usa otro equipo, se le pide el correo
+  de nuevo y **sigue en el paso donde iba**, sin perder lo que ya había dado.
+- Un dato ya guardado **nunca se reemplaza** desde el portal (nadie puede cambiar los datos de otro).
+- En `/admin` se ve el progreso de cada persona (1/4, 2/4…) y cuántas veces se ha conectado.
+- **Qué cuenta como "otra conexión":** el router vuelve a mostrar el portal cuando la sesión termina:
+  si la persona se va de la red más de 5 minutos, si pasa 30 minutos sin usarla, o cada 24 horas.
+  Esos tiempos se cambian en `router/mikrotik/configurar.rsc` (`keepalive-timeout`, `idle-timeout`,
+  `session-timeout`).
 
 ---
 
@@ -35,9 +58,10 @@ El router **no** guarda la página: solo la "presenta". El truco tiene 4 pasos:
 3. **Redirección**: el router muestra su `login.html`. Nosotros lo reemplazamos por uno
    (`router/mikrotik/login.html`) que manda a nuestro servidor con la MAC del teléfono y la dirección del router.
    El *walled garden* (jardín amurallado) permite entrar a nuestro servidor aunque la persona aún no tenga internet.
-4. **Autorización**: cuando la persona envía el formulario, nuestro servidor guarda los datos y manda el
+4. **Autorización**: cuando la persona envía el paso, nuestro servidor guarda los datos y manda el
    navegador de vuelta al router con un usuario/clave de hotspot. El router lo valida y le abre internet
-   a ese dispositivo. Con `mac-cookie`, ese teléfono vuelve a entrar solo durante 7 días.
+   a ese dispositivo. (No se usa la opción `mac-cookie` del router a propósito: así, en cada
+   reconexión la persona vuelve a pasar por el portal y se le pide el siguiente dato.)
 
 > Este proyecto viene listo para **MikroTik** (el más usado para esto y económico). Para UniFi, TP-Link
 > Omada u OpenWrt el servidor es el mismo; solo cambia el paso 4 (cómo se le avisa al router).
@@ -48,8 +72,9 @@ El router **no** guarda la página: solo la "presenta". El truco tiene 4 pasos:
 
 | Archivo | Para qué |
 |---|---|
-| `src/server.js` | El servidor: formulario, registro, reconexión, panel `/admin` y descarga CSV |
-| `src/db.js` | Base de datos SQLite (un solo archivo, `data/registros.db`) |
+| `src/server.js` | El servidor: portal, registro por pasos, panel `/admin` y descarga CSV |
+| `src/etapas.js` | **Los pasos del registro progresivo**: qué se pide en cada conexión |
+| `src/db.js` | Base de datos SQLite (un solo archivo, `data/registros.db`): personas, dispositivos y conexiones |
 | `public/portal.html`, `estilos.css`, `portal.js` | La página que ve la gente. Colores en `estilos.css` (`--color`) |
 | `public/privacidad.html` | Plantilla de política de privacidad (**hay que completarla**) |
 | `public/logo.png` | Pon aquí el logo (opcional; también sirve `.svg`, `.jpg`, `.webp`) |
@@ -71,6 +96,7 @@ npm test                  # pruebas automáticas
 ```
 
 Para simular que vienes del router: `http://localhost:3000/?mac=AA:BB:CC:DD:EE:FF&login=http://10.5.50.1/login`
+(recarga la página después de cada paso para ver el siguiente, como si te reconectaras).
 
 ### 2. Publicar el servidor en internet
 
