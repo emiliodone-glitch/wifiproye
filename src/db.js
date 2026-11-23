@@ -51,7 +51,22 @@ export function abrirBaseDeDatos(ruta) {
       etapa      TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_conexiones_persona ON conexiones(persona_id);
+
+    -- Cada antena/router que ha enviado gente al portal, con el nombre del lugar.
+    -- Se crean solas la primera vez que llega alguien; el nombre se pone en /admin/lugares.
+    CREATE TABLE IF NOT EXISTS lugares (
+      ap           TEXT PRIMARY KEY,
+      nombre       TEXT,
+      primer_visto TEXT NOT NULL DEFAULT (datetime('now')),
+      ultimo_visto TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
+
+  // Bases de datos creadas antes de existir los lugares: agregar la columna.
+  if (!db.prepare('PRAGMA table_info(conexiones)').all().some((c) => c.name === 'ap')) {
+    db.exec('ALTER TABLE conexiones ADD COLUMN ap TEXT');
+  }
+  db.exec('CREATE INDEX IF NOT EXISTS idx_conexiones_ap ON conexiones(ap)');
 
   const q = {
     personaPorDispositivo: db.prepare(`
@@ -64,7 +79,10 @@ export function abrirBaseDeDatos(ruta) {
       ON CONFLICT(clave) DO UPDATE SET persona_id = excluded.persona_id,
         ultimo_visto = datetime('now'), user_agent = excluded.user_agent`),
     tocarDispositivo: db.prepare("UPDATE dispositivos SET ultimo_visto = datetime('now') WHERE clave = ?"),
-    conexion: db.prepare('INSERT INTO conexiones (persona_id, dispositivo, ip, etapa) VALUES (?, ?, ?, ?)'),
+    conexion: db.prepare('INSERT INTO conexiones (persona_id, dispositivo, ip, etapa, ap) VALUES (?, ?, ?, ?, ?)'),
+    verLugar: db.prepare(`
+      INSERT INTO lugares (ap) VALUES (?)
+      ON CONFLICT(ap) DO UPDATE SET ultimo_visto = datetime('now')`),
   };
 
   return {
@@ -96,9 +114,37 @@ export function abrirBaseDeDatos(ruta) {
       return q.personaPorId.get(personaId);
     },
 
-    registrarConexion(personaId, dispositivo, ip, etapa) {
+    registrarConexion(personaId, dispositivo, ip, etapa, ap) {
       if (dispositivo) q.tocarDispositivo.run(dispositivo);
-      q.conexion.run(personaId, dispositivo || null, ip || null, etapa || null);
+      if (ap) q.verLugar.run(ap);
+      q.conexion.run(personaId, dispositivo || null, ip || null, etapa || null, ap || null);
+    },
+
+    // ---------- Lugares ----------
+
+    listarLugares() {
+      return db.prepare(`
+        SELECT l.*,
+          (SELECT COUNT(*) FROM conexiones c WHERE c.ap = l.ap) AS conexiones,
+          (SELECT COUNT(DISTINCT persona_id) FROM conexiones c WHERE c.ap = l.ap) AS personas,
+          (SELECT COUNT(*) FROM conexiones c WHERE c.ap = l.ap AND date(c.fecha) = date('now')) AS hoy
+        FROM lugares l ORDER BY l.nombre IS NULL DESC, l.nombre, l.ap`).all();
+    },
+
+    nombrarLugar(ap, nombre) {
+      return db.prepare("UPDATE lugares SET nombre = ? WHERE ap = ?").run(nombre || null, ap).changes > 0;
+    },
+
+    /** { persona_id: [{ ap, nombre, veces }, ...] } ordenado de más a menos visitas. */
+    lugaresPorPersona() {
+      const filas = db.prepare(`
+        SELECT c.persona_id, c.ap, l.nombre, COUNT(*) AS veces
+        FROM conexiones c LEFT JOIN lugares l ON l.ap = c.ap
+        WHERE c.ap IS NOT NULL
+        GROUP BY c.persona_id, c.ap ORDER BY veces DESC`).all();
+      const mapa = {};
+      for (const f of filas) (mapa[f.persona_id] ||= []).push({ ap: f.ap, nombre: f.nombre, veces: f.veces });
+      return mapa;
     },
 
     listar(limite = 500) {

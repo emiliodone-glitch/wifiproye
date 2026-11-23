@@ -29,6 +29,18 @@ No se pide todo de golpe. Cada vez que la persona se conecta se le pide **solo e
 
 ---
 
+## Varios lugares (varias antenas)
+
+Pueden poner antenas en muchos locales: todas mandan a la gente **al mismo servidor y a la misma base
+de datos**. Si alguien dio su correo en un local y se conecta en otro, se le reconoce y se le pide el
+**siguiente** dato.
+
+- Cada antena **aparece sola** en **`/admin/lugares`** la primera vez que alguien se conecta por ella
+  (Datto: con la MAC de la etiqueta del AP · MikroTik: con su nombre en *System > Identity*).
+- Ahí se le pone el nombre del lugar (ej.: *Local Centro*). Las que no tienen nombre salen primero, en amarillo.
+- En `/admin/lugares` se ve, por lugar: cuántas personas distintas, cuántas conexiones y cuántas hoy.
+- En `/admin` y en el Excel, cada persona muestra dónde se ha conectado: *Local Centro (3), Local Norte (1)*.
+
 ## Equipos compatibles
 
 | Equipo | Guía |

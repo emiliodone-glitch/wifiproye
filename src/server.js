@@ -52,6 +52,18 @@ function claveDispositivo(req, mac) {
   return c ? 'cookie:' + c : null;
 }
 
+/**
+ * Identificador de la antena/router desde la que llegó la persona:
+ *  - Datto: "called" (en el portal) o "node" (en /datto/auth) = MAC del AP.
+ *  - MikroTik: "ap" = nombre (identity) del router.
+ */
+export function idLugar(v) {
+  const s = limpiar(v, 64);
+  if (!s) return null;
+  if (MAC.test(s)) return s.toUpperCase().replace(/-/g, ':');
+  return /^[\w .-]{1,64}$/.test(s) ? s : null;
+}
+
 function estadoDe(persona) {
   const etapa = etapaPendiente(persona);
   return {
@@ -181,29 +193,70 @@ const csvCelda = (v) => {
   return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
+const nombreLugar = (l) => l.nombre || `Sin nombre (${l.ap})`;
+
+function marcoAdmin(titulo, activa, cuerpo) {
+  const enlace = (href, texto) => `<a href="${href}"${activa === href ? ' class="activa"' : ''}>${texto}</a>`;
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapar(titulo)}</title><link rel="stylesheet" href="/estilos.css"></head><body class="admin">
+<main><nav class="menu">${enlace('/admin', 'Personas')}${enlace('/admin/lugares', 'Lugares')}</nav>
+${cuerpo}</main></body></html>`;
+}
+
 function paginaAdmin(db) {
   const r = db.resumen();
+  const lugares = db.lugaresPorPersona();
   const filas = db
     .listar()
     .map((x) => {
       const pend = etapaPendiente(x);
       const hechos = pend ? ETAPAS.indexOf(pend) : ETAPAS.length;
       const progreso = `<span class="progreso" title="${hechos} de ${ETAPAS.length} pasos"><i style="width:${(hechos / ETAPAS.length) * 100}%"></i></span> ${hechos}/${ETAPAS.length}`;
+      const susLugares = (lugares[x.id] || []).map((l) => `${escapar(nombreLugar(l))} (${l.veces})`).join('<br>');
       return `<tr><td>${x.id}</td><td>${progreso}</td><td>${escapar(x.email)}</td>
       <td>${escapar([x.nombre, x.segundo_nombre, x.apellido].filter(Boolean).join(' '))}</td>
       <td>${x.telefono ? escapar(x.codigo_pais + ' ' + x.telefono) : ''}</td><td>${escapar(x.nacimiento || '')}</td>
       <td>${escapar(x.genero || '')}</td><td>${x.acepta_sms == null ? '' : x.acepta_sms ? 'Sí' : 'No'}</td>
-      <td>${x.visitas}</td><td>${x.dispositivos}</td><td>${escapar(x.creado)}</td><td>${escapar(x.ultima_visita || '')}</td></tr>`;
+      <td>${x.visitas}</td><td class="lugares">${susLugares}</td><td>${x.dispositivos}</td><td>${escapar(x.creado)}</td><td>${escapar(x.ultima_visita || '')}</td></tr>`;
     })
     .join('');
-  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Panel de registros</title><link rel="stylesheet" href="/estilos.css"></head><body class="admin">
-<main><h1>Registros del Wi-Fi</h1>
+  return marcoAdmin('Panel de registros', '/admin', `<h1>Registros del Wi-Fi</h1>
 <div class="tarjetas"><div><b>${r.personas}</b>personas</div><div><b>${r.conexiones}</b>conexiones</div><div><b>${r.hoy}</b>conexiones hoy</div></div>
 <p><a class="boton" href="/admin/registros.csv">Descargar Excel (CSV)</a></p>
-<div class="tabla"><table><thead><tr><th>#</th><th>Perfil</th><th>Correo</th><th>Nombre</th><th>Teléfono</th><th>Nacimiento</th><th>Género</th><th>SMS</th><th>Visitas</th><th>Equipos</th><th>Registro (UTC)</th><th>Última visita</th></tr></thead>
-<tbody>${filas || '<tr><td colspan="12">Todavía no hay registros.</td></tr>'}</tbody></table></div>
-<p class="nota">Pasos: ${ETAPAS.map((e, i) => `${i + 1}. ${e.id}`).join(' · ')}. Se muestran los últimos 500; el CSV trae todos.</p></main></body></html>`;
+<div class="tabla"><table><thead><tr><th>#</th><th>Perfil</th><th>Correo</th><th>Nombre</th><th>Teléfono</th><th>Nacimiento</th><th>Género</th><th>SMS</th><th>Visitas</th><th>Lugares (visitas)</th><th>Equipos</th><th>Registro (UTC)</th><th>Última visita</th></tr></thead>
+<tbody>${filas || '<tr><td colspan="13">Todavía no hay registros.</td></tr>'}</tbody></table></div>
+<p class="nota">Pasos: ${ETAPAS.map((e, i) => `${i + 1}. ${e.id}`).join(' · ')}. Se muestran los últimos 500; el CSV trae todos.</p>`);
+}
+
+function paginaLugares(db, aviso = '') {
+  const lista = db.listarLugares();
+  const filas = lista
+    .map((l) => `<tr${l.nombre ? '' : ' class="sin-nombre"'}>
+      <td><form method="post" action="/admin/lugares" class="nombrar">
+        <input type="hidden" name="ap" value="${escapar(l.ap)}">
+        <input name="nombre" value="${escapar(l.nombre || '')}" placeholder="Ej.: Local Centro" maxlength="60" aria-label="Nombre del lugar">
+        <button type="submit">Guardar</button></form></td>
+      <td><code>${escapar(l.ap)}</code></td><td>${l.personas}</td><td>${l.conexiones}</td><td>${l.hoy}</td>
+      <td>${escapar(l.primer_visto)}</td><td>${escapar(l.ultimo_visto)}</td></tr>`)
+    .join('');
+  return marcoAdmin('Lugares', '/admin/lugares', `<h1>Lugares</h1>
+${aviso ? `<p class="aviso-ok">${escapar(aviso)}</p>` : ''}
+<p class="nota">Cada antena o router aparece aquí solo, la primera vez que alguien se conecta por ella.
+Ponle el nombre del lugar donde está instalada (para Datto es la MAC de la etiqueta del AP).</p>
+<div class="tabla"><table><thead><tr><th>Nombre del lugar</th><th>Antena (MAC / router)</th><th>Personas</th><th>Conexiones</th><th>Hoy</th><th>Primera vez (UTC)</th><th>Última vez (UTC)</th></tr></thead>
+<tbody>${filas || '<tr><td colspan="7">Todavía no se ha conectado nadie por ninguna antena.</td></tr>'}</tbody></table></div>`);
+}
+
+/** Evita que otra página web envíe formularios al panel usando la sesión del administrador. */
+function mismoOrigen(req) {
+  if (req.headers['sec-fetch-site'] && !['same-origin', 'none'].includes(req.headers['sec-fetch-site'])) return false;
+  const origen = req.headers.origin;
+  if (!origen) return true;
+  try {
+    return new URL(origen).host === req.headers.host;
+  } catch {
+    return false;
+  }
 }
 
 // ---------- Servidor ----------
@@ -258,7 +311,7 @@ export function crearServidor(cfg = configPorDefecto, db = abrirBaseDeDatos(cfg.
           persona = db.completarPersona(persona.id, datos);
         }
 
-        db.registrarConexion(persona.id, clave, ip, etapa?.id || 'completo');
+        db.registrarConexion(persona.id, clave, ip, etapa?.id || 'completo', idLugar(cuerpo.called || cuerpo.ap));
         return json(res, 200, { ok: true, redirect: urlDeAcceso(cfg, cuerpo), estado: estadoDe(persona) });
       }
 
@@ -270,7 +323,7 @@ export function crearServidor(cfg = configPorDefecto, db = abrirBaseDeDatos(cfg.
           estaCompleto: (mac) => {
             const p = personaDe(mac);
             if (!p || etapaPendiente(p)) return false;
-            db.registrarConexion(p.id, claveDispositivo(req, mac), q.ipv4, 'automatico');
+            db.registrarConexion(p.id, claveDispositivo(req, mac), q.ipv4, 'automatico', idLugar(q.node));
             return true;
           },
         });
@@ -278,16 +331,31 @@ export function crearServidor(cfg = configPorDefecto, db = abrirBaseDeDatos(cfg.
       }
 
       // Panel de administración
-      if (ruta === '/admin' || ruta === '/admin/registros.csv') {
+      if (ruta === '/admin' || ruta === '/admin/registros.csv' || ruta === '/admin/lugares') {
         if (!autorizadoAdmin(cfg, req)) {
           return enviar(res, 401, 'Acceso restringido', 'text/plain; charset=utf-8', {
             'WWW-Authenticate': 'Basic realm="Panel WiFi", charset="UTF-8"',
           });
         }
         if (ruta === '/admin') return enviar(res, 200, paginaAdmin(db));
+        if (ruta === '/admin/lugares') {
+          if (req.method === 'POST') {
+            if (!mismoOrigen(req)) return enviar(res, 403, 'Origen no permitido', 'text/plain; charset=utf-8');
+            const cuerpo = await leerCuerpo(req);
+            const nombre = limpiar(cuerpo.nombre, 60);
+            const ok = db.nombrarLugar(limpiar(cuerpo.ap, 64), nombre);
+            return enviar(res, ok ? 200 : 404, paginaLugares(db, ok ? `Guardado: ${nombre || '(sin nombre)'}` : 'No se encontró esa antena.'));
+          }
+          return enviar(res, 200, paginaLugares(db));
+        }
+        const lugares = db.lugaresPorPersona();
         const cols = ['id', 'creado', 'actualizado', 'email', 'nombre', 'segundo_nombre', 'apellido', 'codigo_pais',
-          'telefono', 'nacimiento', 'genero', 'acepta_sms', 'terminos_aceptados_en', 'visitas'];
-        const csv = '﻿' + [cols.join(','), ...db.todos().map((f) => cols.map((c) => csvCelda(f[c])).join(','))].join('\r\n');
+          'telefono', 'nacimiento', 'genero', 'acepta_sms', 'terminos_aceptados_en', 'visitas', 'lugares'];
+        const filasCsv = db.todos().map((f) => ({
+          ...f,
+          lugares: (lugares[f.id] || []).map((l) => `${nombreLugar(l)} (${l.veces})`).join(' | '),
+        }));
+        const csv = '﻿' + [cols.join(','), ...filasCsv.map((f) => cols.map((c) => csvCelda(f[c])).join(','))].join('\r\n');
         return enviar(res, 200, csv, 'text/csv; charset=utf-8', {
           'Content-Disposition': 'attachment; filename="registros-wifi.csv"',
         });

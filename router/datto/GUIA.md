@@ -84,6 +84,13 @@ Guardar. Los cambios llegan al AP en unos minutos.
 > está firmada con el secreto. El portal que ve la gente sí va con **https://**.
 > Si su versión de Datto Network Manager acepta https:// en ese campo, úsenlo.
 
+### Más antenas
+
+Para agregar más AP440 (en el mismo local o en otros), regístrenlos en **la misma red** de Datto
+Network Manager: reciben solos la configuración del portal. Después de la primera conexión por cada
+antena, entren a **`/admin/lugares`** y pónganle el nombre del lugar (aparecen con la MAC de la
+etiqueta, por ejemplo `F8:D9:B8:7C:4D:E0`).
+
 ## 4. Qué pasa cuando alguien se conecta
 
 ```

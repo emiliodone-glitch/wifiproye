@@ -116,3 +116,14 @@ th, td { padding: 8px 10px; border-bottom: 1px solid var(--borde); text-align: l
 th { background: #f6faf7; }
 .nota { color: var(--suave); font-size: .85rem; }
 .centrado { text-align: center; }
+
+/* Panel: menú y lugares */
+.menu { display: flex; gap: 8px; margin-bottom: 8px; }
+.menu a { padding: 8px 14px; border-radius: 10px; text-decoration: none; color: var(--suave); background: #fff; font-weight: 600; }
+.menu a.activa { background: var(--color); color: #fff; }
+.nombrar { display: flex; gap: 6px; min-width: 260px; }
+.nombrar input { padding: 7px 10px; font-size: 14px; }
+.nombrar button { border: 0; border-radius: 8px; padding: 0 12px; background: var(--color); color: #fff; font-weight: 600; }
+tr.sin-nombre td:first-child input { border-color: #e0a100; background: #fffaf0; }
+td.lugares { white-space: normal; min-width: 140px; }
+.aviso-ok { background: #e8f5ec; color: var(--color-oscuro); padding: 10px 12px; border-radius: 10px; }

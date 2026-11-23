@@ -13,14 +13,16 @@
     ip    = la IP que le dio el router
     login = la dirección del router donde se hace el login ($(link-login-only))
     dst   = la página que la persona quería abrir
+    ap    = el nombre (identity) del router, para saber en qué LUGAR se conectó.
+            Ponle un nombre sin espacios en System > Identity (ej.: Local-Centro).
 
   ⚠️ CAMBIA "https://portal.tudominio.com" por la dirección real de tu servidor
      (en las DOS líneas de abajo).
 -->
-<meta http-equiv="refresh" content="0; url=https://portal.tudominio.com/?mac=$(mac-esc)&ip=$(ip)&login=$(link-login-only-esc)&dst=$(link-orig-esc)$(if error)&error=1$(endif)">
+<meta http-equiv="refresh" content="0; url=https://portal.tudominio.com/?mac=$(mac-esc)&ip=$(ip)&login=$(link-login-only-esc)&dst=$(link-orig-esc)&ap=$(identity)$(if error)&error=1$(endif)">
 </head>
 <body style="font-family:sans-serif;text-align:center;padding-top:40px">
 <p>Abriendo el portal de registro…</p>
-<p><a href="https://portal.tudominio.com/?mac=$(mac-esc)&ip=$(ip)&login=$(link-login-only-esc)&dst=$(link-orig-esc)$(if error)&error=1$(endif)">Toca aquí si no se abre solo</a></p>
+<p><a href="https://portal.tudominio.com/?mac=$(mac-esc)&ip=$(ip)&login=$(link-login-only-esc)&dst=$(link-orig-esc)&ap=$(identity)$(if error)&error=1$(endif)">Toca aquí si no se abre solo</a></p>
 </body>
 </html>

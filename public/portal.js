@@ -7,7 +7,7 @@
   // 1. Guardar los datos que mandó el router.
   //    MikroTik: mac, ip, login, dst
   //    Datto:    mac, uamip, uamport, challenge, userurl, called, ssid, nasid (+ res)
-  var CAMPOS_ROUTER = ['mac', 'ip', 'login', 'dst', 'uamip', 'uamport', 'challenge', 'userurl', 'called', 'ssid', 'nasid'];
+  var CAMPOS_ROUTER = ['mac', 'ip', 'login', 'dst', 'ap', 'uamip', 'uamport', 'challenge', 'userurl', 'called', 'ssid', 'nasid'];
   var router = {};
   CAMPOS_ROUTER.forEach(function (k) {
     if (params.get(k)) router[k] = params.get(k);
