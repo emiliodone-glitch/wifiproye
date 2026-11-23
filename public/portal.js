@@ -4,10 +4,15 @@
   var boton = document.getElementById('boton-enviar');
   var estadoActual = null;
 
-  // 1. Copiar al formulario los datos que mandó el router (MAC, IP, URL de login, destino).
-  ['mac', 'ip', 'login', 'dst'].forEach(function (k) {
-    if (params.get(k)) form.elements[k].value = params.get(k);
+  // 1. Guardar los datos que mandó el router.
+  //    MikroTik: mac, ip, login, dst
+  //    Datto:    mac, uamip, uamport, challenge, userurl, called, ssid, nasid (+ res)
+  var CAMPOS_ROUTER = ['mac', 'ip', 'login', 'dst', 'uamip', 'uamport', 'challenge', 'userurl', 'called', 'ssid', 'nasid'];
+  var router = {};
+  CAMPOS_ROUTER.forEach(function (k) {
+    if (params.get(k)) router[k] = params.get(k);
   });
+  var res = params.get('res'); // solo Datto: notyet | success | failed | logoff
   form.elements.nacimiento.max = new Date().toISOString().slice(0, 10);
 
   function $(id) { return document.getElementById(id); }
@@ -25,7 +30,7 @@
 
   function datosRouter() {
     var d = {};
-    ['mac', 'ip', 'login', 'dst'].forEach(function (k) { d[k] = form.elements[k].value; });
+    for (var k in router) d[k] = router[k];
     return d;
   }
 
@@ -95,7 +100,7 @@
   $('boton-completo').addEventListener('click', conectarCompleto);
 
   function cargarEstado() {
-    var mac = form.elements.mac.value;
+    var mac = router.mac;
     fetch('/api/estado' + (mac ? '?mac=' + encodeURIComponent(mac) : ''), { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(mostrar)
@@ -104,7 +109,16 @@
       });
   }
 
-  if (params.get('error')) mostrarErrores(['No se pudo completar la conexión. Intenta de nuevo.']);
+  if (res === 'success' || res === 'logoff') {
+    // El AP Datto avisa que ya está conectado (o que cerró la sesión).
+    $('cargando').hidden = true;
+    $('aviso').hidden = false;
+    $('aviso-texto').textContent = res === 'success'
+      ? '¡Listo! Ya tienes internet. Puedes cerrar esta ventana.'
+      : 'Tu sesión terminó. Vuelve a conectarte a la red para entrar de nuevo.';
+    return;
+  }
+  if (params.get('error') || res === 'failed') mostrarErrores(['No se pudo completar la conexión. Intenta de nuevo.']);
   cargarEstado();
 
   // 3. Enviar el paso y, si todo sale bien, ir al router para que abra el internet.

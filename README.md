@@ -29,7 +29,20 @@ No se pide todo de golpe. Cada vez que la persona se conecta se le pide **solo e
 
 ---
 
+## Equipos compatibles
+
+| Equipo | Guía |
+|---|---|
+| **Datto Networking AP440** (el que tenemos) + adaptador PoE DNW-POE1 | **[router/datto/GUIA.md](router/datto/GUIA.md)** |
+| MikroTik (alternativa) | Sección "Configurar el MikroTik" más abajo |
+
+El servidor detecta solo de qué equipo viene la persona; no hay que cambiar nada en el código.
+
 ## ¿Cómo se vincula el router con nuestra página?
+
+> El diagrama de abajo es el de MikroTik. El Datto funciona igual en esencia (el AP manda al
+> portal, el portal devuelve a la persona al AP con un acceso firmado y el AP le pregunta a nuestro
+> servidor si la deja pasar); el detalle está en [router/datto/GUIA.md](router/datto/GUIA.md).
 
 El router **no** guarda la página: solo la "presenta". El truco tiene 4 pasos:
 
@@ -78,7 +91,9 @@ El router **no** guarda la página: solo la "presenta". El truco tiene 4 pasos:
 | `public/portal.html`, `estilos.css`, `portal.js` | La página que ve la gente. Colores en `estilos.css` (`--color`) |
 | `public/privacidad.html` | Plantilla de política de privacidad (**hay que completarla**) |
 | `public/logo.png` | Pon aquí el logo (opcional; también sirve `.svg`, `.jpg`, `.webp`) |
-| `router/mikrotik/login.html` | Va dentro del router: manda a la gente a nuestro portal |
+| `src/routers/datto.js` | Integración con Datto: cifrado del acceso y el servidor de autenticación `/datto/auth` |
+| `router/datto/GUIA.md` | Paso a paso para conectar y configurar el Datto AP440 |
+| `router/mikrotik/login.html` | (MikroTik) Va dentro del router: manda a la gente a nuestro portal |
 | `router/mikrotik/configurar.rsc` | Script para configurar el hotspot del MikroTik |
 
 No necesita instalar paquetes: solo **Node.js 22.13 o más nuevo**.

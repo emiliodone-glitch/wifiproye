@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { config as configPorDefecto } from './config.js';
 import { abrirBaseDeDatos } from './db.js';
 import { ETAPAS, etapaPendiente, validarEtapa, tituloDe } from './etapas.js';
+import { esDatto, urlLogon, responderAuth } from './routers/datto.js';
 
 const RAIZ = fileURLToPath(new URL('..', import.meta.url));
 const PUBLICO = join(RAIZ, 'public');
@@ -80,7 +81,12 @@ function esIpPrivada(host) {
  * Solo se aceptan direcciones del router en redes privadas (o en ROUTER_HOSTS) para que
  * nadie pueda usar este servidor para enviar la clave del hotspot a otro sitio.
  */
-export function urlDeAcceso(cfg, { login, dst }) {
+export function urlDeAcceso(cfg, p) {
+  if (esDatto(p)) return urlLogon(cfg, p) || cfg.defaultRedirect;
+  return urlMikrotik(cfg, p);
+}
+
+function urlMikrotik(cfg, { login, dst }) {
   const destino = /^https?:\/\//i.test(dst || '') ? dst : cfg.defaultRedirect;
   if (!login || !cfg.hotspotPass) return destino;
   let url;
@@ -253,7 +259,22 @@ export function crearServidor(cfg = configPorDefecto, db = abrirBaseDeDatos(cfg.
         }
 
         db.registrarConexion(persona.id, clave, ip, etapa?.id || 'completo');
-        return json(res, 200, { ok: true, redirect: urlDeAcceso(cfg, { login: cuerpo.login, dst: cuerpo.dst }), estado: estadoDe(persona) });
+        return json(res, 200, { ok: true, redirect: urlDeAcceso(cfg, cuerpo), estado: estadoDe(persona) });
+      }
+
+      // Datto: el AP pregunta aquí si deja pasar a un teléfono (HTTP Authentication API)
+      if (req.method === 'GET' && ruta === '/datto/auth') {
+        const q = Object.fromEntries(url.searchParams);
+        const personaDe = (mac) => db.personaPorDispositivo(claveDispositivo(req, mac));
+        const cuerpo = responderAuth(cfg, q, {
+          estaCompleto: (mac) => {
+            const p = personaDe(mac);
+            if (!p || etapaPendiente(p)) return false;
+            db.registrarConexion(p.id, claveDispositivo(req, mac), q.ipv4, 'automatico');
+            return true;
+          },
+        });
+        return enviar(res, 200, cuerpo, 'text/plain; charset=utf-8');
       }
 
       // Panel de administración

@@ -15,6 +15,11 @@
   <main class="tarjeta">
     <div id="cargando" class="cargando">Cargando…</div>
 
+    <!-- Mensaje final del router (Datto: res=success / logoff) -->
+    <section id="aviso" class="centrado" hidden>
+      <h2 id="aviso-texto"></h2>
+    </section>
+
     <!-- Perfil completo: se conecta solo -->
     <section id="completo" hidden>
       <h2>¡Hola de nuevo, <span id="completo-nombre"></span>!</h2>
@@ -26,11 +31,6 @@
       <div class="pasos" id="pasos" aria-hidden="true"></div>
       <p id="titulo" class="titulo-paso"></p>
 
-      <!-- Datos que manda el router (se llenan solos) -->
-      <input type="hidden" name="mac">
-      <input type="hidden" name="ip">
-      <input type="hidden" name="login">
-      <input type="hidden" name="dst">
       <input type="hidden" name="etapa">
 
       <!-- PASO 1: correo -->
