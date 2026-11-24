@@ -119,7 +119,7 @@ El router **no** guarda la página: solo la "presenta". El truco tiene 4 pasos:
 | `router/datto/GUIA.md` | Paso a paso para conectar y configurar el Datto AP440 |
 | `router/mikrotik/login.html` | (MikroTik) Va dentro del router: manda a la gente a nuestro portal |
 | `configurar.sh`, `docker-compose.yml`, `Dockerfile`, `deploy/Caddyfile` | Instalación rápida con Docker y HTTPS automático |
-| `demo/index.html` | Demostración del portal y del panel que funciona sola en el navegador (para presentaciones) |
+| `demo/index.html` | Demostración del portal (vista móvil) con simulación de conexiones, funciona sola en el navegador |
 | `router/mikrotik/configurar.rsc` | Script para configurar el hotspot del MikroTik |
 
 No necesita instalar paquetes: solo **Node.js 22.13 o más nuevo**.
