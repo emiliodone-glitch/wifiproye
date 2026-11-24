@@ -29,7 +29,7 @@ El **DNW-POE1** es solo la fuente de poder: le da corriente al AP por el mismo c
 - Enchufar el adaptador a una toma **con tierra** (3 patas). Solo bajo techo, entre 0 °C y 40 °C,
   y si se atornilla a la pared, a 2 m de altura o menos.
 - El AP enciende con ese cable; **no** hace falta el conector "12V DC". Tarda 2–5 minutos en estar listo.
-- ⚠️ Nunca conectes el puerto PoE a una computadora o router: lleva 54 V.
+- Importante: nunca conectes el puerto PoE a una computadora o router: lleva 54 V.
 
 **Puertos del AP440** (bajo la tapa inferior):
 

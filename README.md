@@ -106,6 +106,7 @@ El router **no** guarda la página: solo la "presenta". El truco tiene 4 pasos:
 | `src/routers/datto.js` | Integración con Datto: cifrado del acceso y el servidor de autenticación `/datto/auth` |
 | `router/datto/GUIA.md` | Paso a paso para conectar y configurar el Datto AP440 |
 | `router/mikrotik/login.html` | (MikroTik) Va dentro del router: manda a la gente a nuestro portal |
+| `demo/index.html` | Demostración del portal y del panel que funciona sola en el navegador (para presentaciones) |
 | `router/mikrotik/configurar.rsc` | Script para configurar el hotspot del MikroTik |
 
 No necesita instalar paquetes: solo **Node.js 22.13 o más nuevo**.

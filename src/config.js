@@ -35,11 +35,11 @@ export const config = {
 };
 
 if (!config.adminPass) {
-  console.warn('⚠️  ADMIN_PASS no está definido: el panel /admin quedará desactivado.');
+  console.warn('[aviso] ADMIN_PASS no está definido: el panel /admin quedará desactivado.');
 }
 if (!config.hotspotPass && !config.dattoUamSecret) {
-  console.warn('⚠️  No hay router configurado (DATTO_UAM_SECRET o HOTSPOT_PASS): el portal funcionará en modo prueba.');
+  console.warn('[aviso] No hay router configurado (DATTO_UAM_SECRET o HOTSPOT_PASS): el portal funcionará en modo prueba.');
 }
 if (config.dattoUamSecret && !config.dattoAuthSecret) {
-  console.warn('⚠️  Falta DATTO_AUTH_SECRET: el AP Datto no podrá validar los accesos.');
+  console.warn('[aviso] Falta DATTO_AUTH_SECRET: el AP Datto no podrá validar los accesos.');
 }

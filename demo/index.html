@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal WiFi por pasos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: dos paneles lado a lado — el teléfono del visitante y el panel del administrador — que se apilan en pantallas angostas. */
+:root {
+  --bg: #eef3ef;
+  --surface: #ffffff;
+  --fg: #1b2420;
+  --muted: #5b6a61;
+  --line: #d3ded6;
+  --accent: #1f8a3a;
+  --accent-strong: #145c27;
+  --accent-soft: #e3f1e7;
+  --warn-soft: #fff6e0;
+  --warn: #9a6a00;
+  --danger: #b3261e;
+  --danger-soft: #fdecea;
+  --phone-shell: #1b2420;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111814; --surface: #19221d; --fg: #e4ece6; --muted: #9aaba0; --line: #2c3a32;
+    --accent: #3fb35f; --accent-strong: #7dd696; --accent-soft: #1d3325;
+    --warn-soft: #3a2f12; --warn: #f0c25a; --danger: #ff8a80; --danger-soft: #3a1d1b; --phone-shell: #050806;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111814; --surface: #19221d; --fg: #e4ece6; --muted: #9aaba0; --line: #2c3a32;
+  --accent: #3fb35f; --accent-strong: #7dd696; --accent-soft: #1d3325;
+  --warn-soft: #3a2f12; --warn: #f0c25a; --danger: #ff8a80; --danger-soft: #3a1d1b; --phone-shell: #050806;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+}
+.envoltura { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
+.intro { display: grid; gap: 6px; }
+.intro p { margin: 0; color: var(--muted); max-width: 70ch; }
+.aviso-demo { font-size: 0.85rem; color: var(--warn); background: var(--warn-soft); border-radius: 10px; padding: 8px 12px; justify-self: start; }
+
+.columnas { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 860px) { .columnas { grid-template-columns: minmax(0, 1fr); } }
+.columna { display: grid; gap: 12px; min-width: 0; }
+.etiqueta { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+
+/* Controles de simulación */
+.controles { display: flex; flex-wrap: wrap; gap: 10px; }
+.control { display: grid; gap: 4px; font-size: 0.8rem; color: var(--muted); font-weight: 600; flex: 1 1 150px; }
+.control select { font: inherit; font-weight: 500; font-size: 0.9rem; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+
+/* Teléfono */
+.telefono { background: var(--phone-shell); border-radius: 38px; padding: 12px; width: 100%; max-width: 360px; justify-self: center; box-shadow: 0 18px 40px rgba(0,0,0,.18); }
+.pantalla { background: #eef5ef; color: #1d2420; border-radius: 28px; overflow: hidden; height: 640px; display: flex; flex-direction: column; color-scheme: light; }
+.barra-cna { background: #f6f7f6; border-bottom: 1px solid #dfe5e0; padding: 10px 14px 8px; text-align: center; font-size: 0.72rem; color: #5c6b61; }
+.barra-cna b { display: block; color: #1d2420; font-size: 0.85rem; }
+.contenido { flex: 1; overflow-y: auto; }
+.cabecera { background: linear-gradient(160deg, #1f8a3a, #145c27); color: #fff; text-align: center; padding: 22px 16px 50px; }
+.cabecera h2 { font-family: var(--font-body); font-size: 1.05rem; font-weight: 700; }
+.cabecera h2 span { display: block; font-size: 1.5rem; }
+.tarjeta { background: #fff; margin: -36px 12px 16px; border-radius: 16px; padding: 18px 16px; box-shadow: 0 6px 20px rgba(0,0,0,.08); display: grid; gap: 12px; }
+.pasos { display: flex; justify-content: center; gap: 8px; }
+.pasos i { width: 9px; height: 9px; border-radius: 50%; background: #cfdcd2; }
+.pasos i.hecho { background: #1f8a3a; }
+.pasos i.actual { background: #1f8a3a; box-shadow: 0 0 0 4px rgba(31,138,58,.2); }
+.titulo-paso { margin: 0; font-weight: 600; text-align: center; font-size: 0.98rem; }
+.tarjeta label { display: grid; gap: 4px; font-size: 0.82rem; font-weight: 600; }
+.tarjeta label b, .leyenda b { color: #b3261e; }
+.tarjeta input[type=email], .tarjeta input[type=text], .tarjeta input[type=tel], .tarjeta input[type=date], .tarjeta select {
+  font: inherit; font-size: 16px; font-weight: 400; padding: 9px 11px; border: 1px solid #cfdcd2; border-radius: 10px; width: 100%; background: #fff; color: #1d2420;
+}
+.tarjeta input:focus, .tarjeta select:focus { outline: 2px solid #1f8a3a; outline-offset: 1px; }
+.fila { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fila.tel { grid-template-columns: 92px 1fr; }
+.tarjeta label.casilla { display: flex; }
+.casilla { display: flex; gap: 8px; align-items: flex-start; font-weight: 400 !important; font-size: 0.78rem !important; color: #5c6b61; }
+.casilla input, .opcion input { width: 18px; height: 18px; margin: 0; flex: none; accent-color: #1f8a3a; }
+.radios { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.85rem; }
+.leyenda { width: 100%; font-size: 0.82rem; font-weight: 600; }
+.opcion { display: flex; gap: 6px; align-items: center; }
+.errores { background: #fdecea; color: #b3261e; border-radius: 10px; padding: 8px 10px; font-size: 0.82rem; }
+.errores p { margin: 2px 0; }
+.principal { width: 100%; border: 0; border-radius: 12px; padding: 13px; font: inherit; font-weight: 700; font-size: 1rem; background: #1f8a3a; color: #fff; cursor: pointer; }
+.principal:focus-visible { outline: 3px solid #145c27; outline-offset: 2px; }
+.estado-final { text-align: center; display: grid; gap: 10px; justify-items: center; padding: 8px 0; }
+.estado-final .icono { width: 54px; height: 54px; border-radius: 50%; background: #e3f1e7; color: #1f8a3a; display: grid; place-items: center; font-size: 1.6rem; font-weight: 700; }
+.estado-final p { margin: 0; color: #5c6b61; font-size: 0.88rem; }
+.estado-final h3 { font-family: var(--font-body); font-size: 1.1rem; }
+
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.boton { font: inherit; font-weight: 600; font-size: 0.88rem; border-radius: 10px; padding: 9px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.boton.fuerte { background: var(--accent); border-color: var(--accent); color: #fff; }
+.boton:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.nota { color: var(--muted); font-size: 0.82rem; margin: 0; text-align: center; }
+
+/* Panel del administrador */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.panel-cabecera { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.pestanas { display: flex; gap: 6px; }
+.pestanas button { font: inherit; font-weight: 600; font-size: 0.85rem; border: 1px solid var(--line); background: var(--bg); color: var(--muted); padding: 7px 14px; border-radius: 10px; cursor: pointer; }
+.pestanas button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cifras { display: flex; flex-wrap: wrap; gap: 10px; }
+.cifra { background: var(--bg); border-radius: 12px; padding: 10px 16px; min-width: 110px; color: var(--muted); font-size: 0.8rem; }
+.cifra b { display: block; font-family: var(--font-display); font-size: 1.6rem; color: var(--fg); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.tabla { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.84rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+th { background: var(--bg); color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+td.lugares { white-space: normal; min-width: 130px; }
+tr.nueva td { animation: destello 1.2s ease-out; }
+@keyframes destello { from { background: var(--accent-soft); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { tr.nueva td { animation: none; } }
+.progreso { display: inline-flex; align-items: center; gap: 6px; }
+.progreso span { width: 54px; height: 7px; background: var(--line); border-radius: 4px; overflow: hidden; display: inline-block; }
+.progreso span i { display: block; height: 100%; background: var(--accent); }
+.chip { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-strong); }
+.chip.pend { background: var(--warn-soft); color: var(--warn); }
+.vacio { color: var(--muted); text-align: center; padding: 18px; }
+code { font-size: 0.8rem; }
+
+.como { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+.como ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; color: var(--muted); }
+.como li b { color: var(--fg); }
+
+[hidden] { display: none !important; }
+body { margin: 0; }
+</style>
+</head>
+<body>
+<div class="envoltura">
+  <header class="intro">
+    <h1>Portal WiFi por pasos</h1>
+    <p>Cuando alguien se conecta al Wi-Fi, se abre este portal. En cada conexión se le pide un solo dato nuevo: correo, nombre, teléfono y, al final, fecha de nacimiento y género. Con el perfil completo entra directo. Prueba el recorrido en el teléfono y mira cómo se llena el panel del administrador.</p>
+    <span class="aviso-demo">Demostración: lo que escribas se queda solo en este navegador y no se envía a ningún lado.</span>
+  </header>
+
+  <div class="columnas">
+    <section class="columna" aria-labelledby="t-visitante">
+      <span class="etiqueta" id="t-visitante">Lo que ve la persona</span>
+      <div class="controles">
+        <label class="control" for="sel-telefono">Teléfono que se conecta
+          <select id="sel-telefono">
+            <option value="02:1A:7F:33:10:01">Teléfono A</option>
+            <option value="02:1A:7F:33:10:02">Teléfono B</option>
+            <option value="02:1A:7F:33:10:03">Teléfono C</option>
+          </select>
+        </label>
+        <label class="control" for="sel-lugar">Antena (lugar)
+          <select id="sel-lugar">
+            <option value="F8:D9:B8:7C:4D:E0">Local Centro</option>
+            <option value="AC:86:74:3B:7A:C0">Local Norte</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="telefono">
+        <div class="pantalla">
+          <div class="barra-cna"><b>Captive Wi-Fi</b>portal.tudominio.com</div>
+          <div class="contenido" id="contenido"></div>
+        </div>
+      </div>
+
+      <div class="acciones">
+        <button type="button" class="boton fuerte" id="btn-reconectar">Simular otra conexión</button>
+        <button type="button" class="boton" id="btn-reiniciar">Borrar la demo</button>
+      </div>
+      <p class="nota" id="nota-sesion">Cada conexión nueva representa a la persona volviendo otro día (o al vencer su sesión).</p>
+    </section>
+
+    <section class="columna" aria-labelledby="t-admin">
+      <span class="etiqueta" id="t-admin">Lo que ve el administrador</span>
+      <div class="panel">
+        <div class="panel-cabecera">
+          <h2 style="font-size:1.2rem">Registros del Wi-Fi</h2>
+          <div class="pestanas" role="tablist">
+            <button type="button" role="tab" id="tab-personas" aria-selected="true">Personas</button>
+            <button type="button" role="tab" id="tab-lugares" aria-selected="false">Lugares</button>
+          </div>
+        </div>
+        <div class="cifras" id="cifras"></div>
+        <div class="tabla" id="tabla"></div>
+      </div>
+
+      <div class="como">
+        <h3 style="font-size:1.05rem">Cómo funciona con el router</h3>
+        <ol>
+          <li><b>La persona se conecta</b> a la red abierta y la antena le pregunta al servidor si ya la conoce.</li>
+          <li><b>Si le faltan datos,</b> la antena abre este portal y la persona llena solo el paso que le toca.</li>
+          <li><b>El servidor guarda el dato</b> y le da a la antena un permiso firmado de un solo uso para abrirle internet.</li>
+          <li><b>Al vencer la sesión,</b> vuelve a ver el portal con el siguiente paso. Con el perfil completo entra sin portal.</li>
+        </ol>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ETAPAS = [
+    { id: 'correo', titulo: 'Escribe tu correo para conectarte' },
+    { id: 'nombre', titulo: '¡Hola de nuevo! Ya estás registrado. Para seguir conectándote, dinos tu nombre.' },
+    { id: 'telefono', titulo: '¡Hola, {nombre}! Para seguir conectándote, agrega tu número de teléfono.' },
+    { id: 'detalles', titulo: '¡Hola, {nombre}! Último paso: tu fecha de nacimiento y género.' }
+  ];
+  var LUGARES = { 'F8:D9:B8:7C:4D:E0': 'Local Centro', 'AC:86:74:3B:7A:C0': 'Local Norte' };
+  var CLAVE = 'demo-portal-wifi-v1';
+
+  function vacio() { return { personas: [], dispositivos: {}, conexiones: [], pantalla: {} }; }
+  var datos = vacio();
+  try { var g = localStorage.getItem(CLAVE); if (g) datos = JSON.parse(g); } catch (e) {}
+  function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(datos)); } catch (e) {} }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var selTel = $('sel-telefono'), selLugar = $('sel-lugar'), contenido = $('contenido');
+  var vista = 'personas', ultimaNueva = null;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function persona() { var id = datos.dispositivos[selTel.value]; return datos.personas.find(function (p) { return p.id === id; }) || null; }
+  function pendiente(p) {
+    if (!p) return ETAPAS[0];
+    if (!p.nombre || !p.apellido) return ETAPAS[1];
+    if (!p.telefono) return ETAPAS[2];
+    if (!p.nacimiento || !p.genero) return ETAPAS[3];
+    return null;
+  }
+  function hora() { var d = new Date(); return d.toLocaleDateString('es') + ' ' + d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }); }
+  function registrarConexion(p, etapa) {
+    datos.conexiones.push({ persona: p.id, ap: selLugar.value, etapa: etapa, fecha: hora() });
+    p.ultima = hora();
+    ultimaNueva = p.id;
+  }
+
+  // ---------- Teléfono ----------
+  function pantallaDe() { return datos.pantalla[selTel.value] || 'portal'; }
+
+  function pintarTelefono() {
+    var p = persona();
+    var etapa = pendiente(p);
+    var modo = pantallaDe();
+    var html = '<div class="cabecera"><h2>Bienvenido a la red <span>WiFi Gratis</span></h2></div><div class="tarjeta">';
+
+    if (modo === 'conectado') {
+      html += '<div class="estado-final"><div class="icono" aria-hidden="true">✓</div><h3>¡Listo! Ya tienes internet</h3><p>Sesión activa por 2 horas en ' + esc(LUGARES[selLugar.value]) + '.</p><p>Usa “Simular otra conexión” para ver el siguiente paso.</p></div>';
+    } else if (!etapa) {
+      html += '<div class="estado-final"><div class="icono" aria-hidden="true">✓</div><h3>¡Hola de nuevo, ' + esc(p.nombre) + '!</h3><p>Tu perfil está completo: la antena te dejó entrar sin mostrar el formulario.</p></div>';
+    } else {
+      var paso = ETAPAS.indexOf(etapa) + 1;
+      if (p) {
+        html += '<div class="pasos" aria-label="Paso ' + paso + ' de 4">';
+        for (var i = 1; i <= 4; i++) html += '<i class="' + (i < paso ? 'hecho' : i === paso ? 'actual' : '') + '"></i>';
+        html += '</div>';
+      }
+      html += '<p class="titulo-paso">' + esc(etapa.titulo.replace('{nombre}', p && p.nombre ? p.nombre : '')) + '</p>';
+      html += '<form id="f" novalidate style="display:grid;gap:12px">' + camposDe(etapa.id) + '<div class="errores" id="err" role="alert" hidden></div><button class="principal" type="submit">Conectarme</button></form>';
+    }
+    html += '</div>';
+    contenido.innerHTML = html;
+    var f = $('f');
+    if (f) f.addEventListener('submit', enviar);
+  }
+
+  function camposDe(id) {
+    if (id === 'correo') return '<label for="c-email"><span>Correo electrónico <b>*</b></span><input type="email" id="c-email" name="email" autocomplete="off" placeholder="tucorreo@ejemplo.com"></label>' +
+      '<label class="casilla" for="c-terminos"><input type="checkbox" id="c-terminos" name="terminos"><span>Acepto los términos de uso y la política de privacidad. <b>*</b></span></label>';
+    if (id === 'nombre') return '<div class="fila"><label for="c-nombre"><span>Nombre <b>*</b></span><input type="text" id="c-nombre" name="nombre" autocomplete="off"></label>' +
+      '<label for="c-segundo">Segundo nombre<input type="text" id="c-segundo" name="segundo" autocomplete="off"></label></div>' +
+      '<label for="c-apellido"><span>Apellido <b>*</b></span><input type="text" id="c-apellido" name="apellido" autocomplete="off"></label>';
+    if (id === 'telefono') return '<label for="c-tel"><span>Teléfono <b>*</b></span></label><div class="fila tel"><select id="c-pais" name="pais" aria-label="Código de país"><option>+1</option><option>+34</option><option>+52</option><option>+57</option><option>+509</option></select>' +
+      '<input type="tel" id="c-tel" name="telefono" placeholder="809 555 1234" autocomplete="off"></div>' +
+      '<label class="casilla" for="c-sms"><input type="checkbox" id="c-sms" name="sms"><span>Acepto recibir mensajes de texto. No es obligatorio para conectarse.</span></label>';
+    return '<label for="c-nac"><span>Fecha de nacimiento <b>*</b></span><input type="date" id="c-nac" name="nacimiento" min="1900-01-01" max="' + new Date().toISOString().slice(0, 10) + '"></label>' +
+      '<div class="radios" role="radiogroup" aria-label="Género"><span class="leyenda">Género <b>*</b></span>' +
+      ['Femenino', 'Masculino', 'Otro'].map(function (g, i) { return '<label class="opcion" for="c-g' + i + '"><input type="radio" id="c-g' + i + '" name="genero" value="' + g.toLowerCase() + '"> ' + g + '</label>'; }).join('') + '</div>';
+  }
+
+  function enviar(e) {
+    e.preventDefault();
+    var f = e.target, p = persona(), etapa = pendiente(p), err = [];
+    var v = function (n) { return f.elements[n] ? String(f.elements[n].value || '').trim() : ''; };
+
+    if (etapa.id === 'correo') {
+      var email = v('email').toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) err.push('Escribe un correo electrónico válido.');
+      if (!f.elements.terminos.checked) err.push('Debes aceptar los términos y la política de privacidad.');
+      if (!err.length) {
+        // Si el correo ya existe (otro teléfono), se reconoce y sigue donde iba.
+        p = datos.personas.find(function (x) { return x.email === email; });
+        if (!p) { p = { id: datos.personas.length + 1, email: email, creado: hora() }; datos.personas.push(p); }
+        datos.dispositivos[selTel.value] = p.id;
+      }
+    } else if (etapa.id === 'nombre') {
+      if (!v('nombre')) err.push('Escribe tu nombre.');
+      if (!v('apellido')) err.push('Escribe tu apellido.');
+      if (!err.length) { p.nombre = v('nombre'); p.segundo = v('segundo'); p.apellido = v('apellido'); }
+    } else if (etapa.id === 'telefono') {
+      var tel = v('telefono').replace(/\D/g, '');
+      if (tel.length < 7 || tel.length > 15) err.push('Escribe un número de teléfono válido.');
+      if (!err.length) { p.telefono = v('pais') + ' ' + tel; p.sms = f.elements.sms.checked; }
+    } else {
+      if (!v('nacimiento')) err.push('Escribe tu fecha de nacimiento.');
+      var g = f.querySelector('input[name=genero]:checked');
+      if (!g) err.push('Elige una opción de género.');
+      if (!err.length) { p.nacimiento = v('nacimiento'); p.genero = g.value; }
+    }
+
+    var caja = $('err');
+    if (err.length) { caja.innerHTML = err.map(function (t) { return '<p>' + esc(t) + '</p>'; }).join(''); caja.hidden = false; return; }
+    registrarConexion(p, etapa.id);
+    datos.pantalla[selTel.value] = 'conectado';
+    guardar(); pintarTodo();
+  }
+
+  $('btn-reconectar').addEventListener('click', function () {
+    var p = persona();
+    datos.pantalla[selTel.value] = 'portal';
+    if (p && !pendiente(p)) registrarConexion(p, 'automático');
+    guardar(); pintarTodo();
+  });
+
+  $('btn-reiniciar').addEventListener('click', function (e) {
+    var b = e.currentTarget;
+    if (b.dataset.confirmar !== 'si') { b.dataset.confirmar = 'si'; b.textContent = 'Toca otra vez para borrar'; setTimeout(function () { b.dataset.confirmar = ''; b.textContent = 'Borrar la demo'; }, 3000); return; }
+    datos = vacio(); b.dataset.confirmar = ''; b.textContent = 'Borrar la demo'; ultimaNueva = null;
+    guardar(); pintarTodo();
+  });
+
+  selTel.addEventListener('change', pintarTodo);
+  selLugar.addEventListener('change', pintarTodo);
+
+  // ---------- Panel ----------
+  function nombreLugar(ap) { return LUGARES[ap] || ap; }
+
+  function pintarPanel() {
+    var hoy = datos.conexiones.length;
+    $('cifras').innerHTML =
+      '<div class="cifra"><b>' + datos.personas.length + '</b>personas</div>' +
+      '<div class="cifra"><b>' + datos.conexiones.length + '</b>conexiones</div>' +
+      '<div class="cifra"><b>' + datos.personas.filter(function (p) { return !pendiente(p); }).length + '</b>perfiles completos</div>';
+
+    if (vista === 'personas') {
+      if (!datos.personas.length) { $('tabla').innerHTML = '<p class="vacio">Todavía no hay registros. Escribe un correo en el teléfono para crear el primero.</p>'; return; }
+      var filas = datos.personas.slice().reverse().map(function (p) {
+        var pend = pendiente(p), hechos = pend ? ETAPAS.indexOf(pend) : 4;
+        var cuenta = {};
+        datos.conexiones.forEach(function (c) { if (c.persona === p.id) cuenta[c.ap] = (cuenta[c.ap] || 0) + 1; });
+        var lugares = Object.keys(cuenta).sort(function (a, b) { return cuenta[b] - cuenta[a]; }).map(function (ap) { return esc(nombreLugar(ap)) + ' (' + cuenta[ap] + ')'; }).join('<br>');
+        var visitas = datos.conexiones.filter(function (c) { return c.persona === p.id; }).length;
+        return '<tr' + (p.id === ultimaNueva ? ' class="nueva"' : '') + '><td>' + p.id + '</td>' +
+          '<td><span class="progreso"><span><i style="width:' + hechos * 25 + '%"></i></span>' + hechos + '/4</span></td>' +
+          '<td>' + esc(p.email) + '</td><td>' + esc([p.nombre, p.segundo, p.apellido].filter(Boolean).join(' ')) + '</td>' +
+          '<td>' + esc(p.telefono || '') + '</td><td>' + esc(p.nacimiento || '') + '</td><td>' + esc(p.genero || '') + '</td>' +
+          '<td>' + (p.telefono ? (p.sms ? 'Sí' : 'No') : '') + '</td><td>' + visitas + '</td><td class="lugares">' + lugares + '</td>' +
+          '<td>' + (pend ? '<span class="chip pend">Falta: ' + pend.id + '</span>' : '<span class="chip">Completo</span>') + '</td></tr>';
+      }).join('');
+      $('tabla').innerHTML = '<table><thead><tr><th>#</th><th>Perfil</th><th>Correo</th><th>Nombre</th><th>Teléfono</th><th>Nacimiento</th><th>Género</th><th>SMS</th><th>Visitas</th><th>Lugares</th><th>Estado</th></tr></thead><tbody>' + filas + '</tbody></table>';
+    } else {
+      var filasL = Object.keys(LUGARES).map(function (ap) {
+        var cs = datos.conexiones.filter(function (c) { return c.ap === ap; });
+        var gente = {}; cs.forEach(function (c) { gente[c.persona] = 1; });
+        return '<tr><td><b>' + esc(LUGARES[ap]) + '</b></td><td><code>' + ap + '</code></td><td>' + Object.keys(gente).length + '</td><td>' + cs.length + '</td><td>' + (cs.length ? esc(cs[cs.length - 1].fecha) : '—') + '</td></tr>';
+      }).join('');
+      $('tabla').innerHTML = '<table><thead><tr><th>Lugar</th><th>Antena (MAC)</th><th>Personas</th><th>Conexiones</th><th>Última</th></tr></thead><tbody>' + filasL + '</tbody></table>';
+    }
+  }
+
+  function elegirVista(v) {
+    vista = v;
+    $('tab-personas').setAttribute('aria-selected', v === 'personas');
+    $('tab-lugares').setAttribute('aria-selected', v === 'lugares');
+    pintarPanel();
+  }
+  $('tab-personas').addEventListener('click', function () { elegirVista('personas'); });
+  $('tab-lugares').addEventListener('click', function () { elegirVista('lugares'); });
+
+  function pintarTodo() { pintarTelefono(); pintarPanel(); }
+  pintarTodo();
+})();
+</script>
+</body>
+</html>
