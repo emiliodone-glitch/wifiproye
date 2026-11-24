@@ -16,6 +16,8 @@ export const config = {
   orgName: env.ORG_NAME || 'Mi Organización',
   wifiName: env.WIFI_NAME || 'WiFi Gratis',
   privacyUrl: env.PRIVACY_URL || '/privacidad',
+  // Texto del pie de página del portal
+  pieTexto: env.PIE_TEXTO ?? 'Aporte Secretaría de Operaciones',
   defaultRedirect: env.DEFAULT_REDIRECT || 'https://www.google.com',
   // ---- Datto Networking (AP440, etc.) ----
   // "Splash page secret" (UAM) y "Authentication secret" (HTTP API) de Datto Network Manager.

@@ -1,0 +1,15 @@
+# El portal que ve la gente va por HTTPS.
+{$DOMINIO} {
+	reverse_proxy portal:3000
+}
+
+# El AP Datto consulta /datto/auth por HTTP (así lo pide su documentación).
+# Todo lo demás se redirige a HTTPS.
+http://{$DOMINIO} {
+	handle /datto/auth* {
+		reverse_proxy portal:3000
+	}
+	handle {
+		redir https://{host}{uri} permanent
+	}
+}

@@ -181,6 +181,7 @@ function plantilla(nombre, cfg, extra = {}) {
     ORG_NAME: cfg.orgName,
     WIFI_NAME: cfg.wifiName,
     PRIVACY_URL: cfg.privacyUrl,
+    PIE_TEXTO: cfg.pieTexto ?? 'Aporte Secretaría de Operaciones',
     LOGO: ['logo.png', 'logo.svg', 'logo.jpg', 'logo.webp'].find((f) => existsSync(join(PUBLICO, f))) || '',
     ...extra,
   };

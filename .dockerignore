@@ -1,0 +1,8 @@
+.git
+data
+.env
+test
+demo
+router
+node_modules
+*.zip

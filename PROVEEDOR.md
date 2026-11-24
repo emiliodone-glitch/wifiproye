@@ -1,5 +1,7 @@
 # Instrucciones para montar el portal (para el proveedor / administrador de Datto)
 
+Autor: **Emilio Doñe** · *Aporte Secretaría de Operaciones*
+
 > English version below.
 
 ## Qué es
@@ -11,6 +13,25 @@ base de datos, con un panel de administración en `/admin`.
 **No es una página HTML estática.** Necesita su servidor (Node.js) por dos razones:
 1. Guardar los datos de cada persona y recordar en qué paso va.
 2. Responder al AP Datto si deja pasar a cada teléfono (*HTTP Authentication API*).
+
+## Instalación rápida (recomendada)
+
+En un servidor Linux con **Docker** y un dominio que apunte a su IP (puertos 80 y 443 abiertos):
+
+```bash
+unzip wifiproye-portal.zip && cd wifiproye
+./configurar.sh          # pregunta dominio y nombres; crea claves seguras
+docker compose up -d     # levanta el portal con HTTPS automático
+```
+
+`configurar.sh` muestra al final **exactamente lo que hay que copiar en Datto Network Manager**
+(URL del portal, URL de autenticación y los dos secretos) y la clave del panel `/admin`.
+Eso es todo: no hace falta instalar Node.js ni configurar HTTPS a mano.
+
+Para actualizar el diseño (logo, colores, textos), cambiar los archivos en `public/` y ejecutar
+`docker compose up -d --build`.
+
+## Instalación manual (sin Docker)
 
 ## Requisitos
 
@@ -51,6 +72,21 @@ Guía completa: `router/datto/GUIA.md`. Pruebas automáticas: `npm test`.
 ---
 
 # Setup instructions (for the Datto administrator)
+
+Author: **Emilio Doñe** · *Aporte Secretaría de Operaciones*
+
+## Quick install (Docker, recommended)
+
+On a Linux server with Docker and a domain pointing to it (ports 80/443 open):
+
+```bash
+./configurar.sh        # asks for the domain and names, generates secrets
+docker compose up -d   # starts the portal with automatic HTTPS (Caddy)
+```
+
+`configurar.sh` prints the exact values to paste into Datto Network Manager and the `/admin` password.
+The manual setup below is only needed without Docker.
+
 
 ## What it is
 

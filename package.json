@@ -2,6 +2,7 @@
   "name": "wifiproye",
   "version": "1.0.0",
   "description": "Portal cautivo propio: formulario de registro para dar acceso al Wi-Fi",
+  "author": "Emilio Doñe",
   "type": "module",
   "main": "src/server.js",
   "scripts": {

@@ -127,3 +127,7 @@ th { background: #f6faf7; }
 tr.sin-nombre td:first-child input { border-color: #e0a100; background: #fffaf0; }
 td.lugares { white-space: normal; min-width: 140px; }
 .aviso-ok { background: #e8f5ec; color: var(--color-oscuro); padding: 10px 12px; border-radius: 10px; }
+
+/* Pie de página */
+.credito { margin: 0 0 6px; font-weight: 600; color: var(--color-oscuro); letter-spacing: .02em; }
+.credito:empty { display: none; }

@@ -135,6 +135,9 @@ tr.nueva td { animation: destello 1.2s ease-out; }
 code { font-size: 0.8rem; }
 
 .como { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+.pie-portal { text-align: center; font-size: 0.78rem; font-weight: 600; color: #145c27; margin: 4px 12px 18px; }
+.pie-portal span { font-weight: 400; color: #5c6b61; text-decoration: underline; }
+.pie-pagina { text-align: center; color: var(--muted); font-size: 0.85rem; padding-top: 8px; border-top: 1px solid var(--line); }
 .como ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; color: var(--muted); }
 .como li b { color: var(--fg); }
 
@@ -208,6 +211,8 @@ body { margin: 0; }
       </div>
     </section>
   </div>
+
+  <footer class="pie-pagina">Aporte Secretaría de Operaciones · Desarrollado por Emilio Doñe</footer>
 </div>
 
 <script>
@@ -269,7 +274,7 @@ body { margin: 0; }
       html += '<p class="titulo-paso">' + esc(etapa.titulo.replace('{nombre}', p && p.nombre ? p.nombre : '')) + '</p>';
       html += '<form id="f" novalidate style="display:grid;gap:12px">' + camposDe(etapa.id) + '<div class="errores" id="err" role="alert" hidden></div><button class="principal" type="submit">Conectarme</button></form>';
     }
-    html += '</div>';
+    html += '</div><p class="pie-portal">Aporte Secretaría de Operaciones<br><span>Política de privacidad</span></p>';
     contenido.innerHTML = html;
     var f = $('f');
     if (f) f.addEventListener('submit', enviar);

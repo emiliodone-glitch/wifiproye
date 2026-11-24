@@ -1,8 +1,20 @@
 # wifiproye — Portal cautivo propio
 
+**Autor:** Emilio Doñe · *Aporte Secretaría de Operaciones*
+
 Cuando alguien se conecta al Wi-Fi, el teléfono abre solo una página donde la persona deja sus datos.
 Al enviarlos, el router le abre el internet. Los datos quedan guardados en nuestro servidor
 y se pueden ver y descargar en Excel desde `/admin`.
+
+## Instalación rápida (servidor con Docker)
+
+```bash
+./configurar.sh        # pregunta el dominio y el nombre, crea las claves y muestra los datos para Datto
+docker compose up -d   # levanta el portal con HTTPS automático
+```
+
+El portal queda en `https://SU-DOMINIO/` y el panel en `https://SU-DOMINIO/admin`.
+Detalles para el proveedor: [PROVEEDOR.md](PROVEEDOR.md).
 
 ## Registro progresivo (un dato nuevo en cada conexión)
 
@@ -106,6 +118,7 @@ El router **no** guarda la página: solo la "presenta". El truco tiene 4 pasos:
 | `src/routers/datto.js` | Integración con Datto: cifrado del acceso y el servidor de autenticación `/datto/auth` |
 | `router/datto/GUIA.md` | Paso a paso para conectar y configurar el Datto AP440 |
 | `router/mikrotik/login.html` | (MikroTik) Va dentro del router: manda a la gente a nuestro portal |
+| `configurar.sh`, `docker-compose.yml`, `Dockerfile`, `deploy/Caddyfile` | Instalación rápida con Docker y HTTPS automático |
 | `demo/index.html` | Demostración del portal y del panel que funciona sola en el navegador (para presentaciones) |
 | `router/mikrotik/configurar.rsc` | Script para configurar el hotspot del MikroTik |
 
